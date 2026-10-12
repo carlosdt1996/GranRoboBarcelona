@@ -37,6 +37,13 @@ export const C = {
   water: '#3f9ad8',
   pool: '#52c8ee',
   sand: '#e9d295',
+  forest: '#3d7a3a',
+  forestDark: '#2f6230',
+  dirt: '#8a7a4a',
+  farm: '#9aa85a',
+  grave: '#a8a090',
+  seaGround: '#3a4aa8',
+  seaFoam: '#5a6ad0',
   shadow: 'rgba(52, 20, 92, 0.42)',
   under: '#4a3550',
 };

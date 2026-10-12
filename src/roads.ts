@@ -1,4 +1,4 @@
-import type { GameMap, Road } from './map';
+import type { World, Road } from './map';
 
 export interface RNode {
   x: number;
@@ -25,8 +25,11 @@ export interface EdgePose { x: number; y: number; a: number }
 export class RoadGraph {
   nodes: RNode[] = [];
   edges: REdge[] = [];
+  /** Celdas de 128 m → aristas que pasan por ellas. */
+  private grid = new Map<number, number[]>();
+  private static CELL = 128;
 
-  constructor(map: GameMap) {
+  constructor(map: World) {
     const count = new Map<string, number>();
     const key = (x: number, y: number) => `${Math.round(x * 10)},${Math.round(y * 10)}`;
     const drive = map.roads.filter((r) => r.drive);
@@ -60,6 +63,29 @@ export class RoadGraph {
         }
       }
     }
+    const C = RoadGraph.CELL;
+    for (const e of this.edges) {
+      const seen = new Set<number>();
+      for (let k = 0; k < e.pts.length; k += 2) {
+        const key = (Math.floor(e.pts[k] / C) + 32768) * 65536 + Math.floor(e.pts[k + 1] / C) + 32768;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        let l = this.grid.get(key);
+        if (!l) this.grid.set(key, (l = []));
+        l.push(e.id);
+      }
+    }
+  }
+
+  /** Aristas con algún vértice a menos de ~r de (x, y) (sin repetir). */
+  edgesNear(x: number, y: number, r: number): number[] {
+    const C = RoadGraph.CELL, out = new Set<number>();
+    for (let cx = Math.floor((x - r) / C); cx <= Math.floor((x + r) / C); cx++)
+      for (let cy = Math.floor((y - r) / C); cy <= Math.floor((y + r) / C); cy++) {
+        const l = this.grid.get((cx + 32768) * 65536 + cy + 32768);
+        if (l) for (const i of l) out.add(i);
+      }
+    return [...out];
   }
 
   private addPiece(road: Road, pts: Float32Array, a: number, b: number) {
@@ -111,10 +137,18 @@ export class RoadGraph {
     return -w / 2 + (w / e.lanes) * (lane + 0.5);
   }
 
-  /** Arista más cercana a un punto (búsqueda lineal; solo para inicializar). */
+  /** Arista más cercana a un punto: primero en los alrededores y, si no hay, en toda la ciudad. */
   nearestEdge(x: number, y: number, filter?: (e: REdge) => boolean): { edge: REdge; s: number; d: number } | null {
+    for (const r of [150, 600]) {
+      const best = this.nearestIn(this.edgesNear(x, y, r).map((i) => this.edges[i]), x, y, filter);
+      if (best && best.d < r) return best;
+    }
+    return this.nearestIn(this.edges, x, y, filter);
+  }
+
+  private nearestIn(edges: REdge[], x: number, y: number, filter?: (e: REdge) => boolean) {
     let best: { edge: REdge; s: number; d: number } | null = null;
-    for (const e of this.edges) {
+    for (const e of edges) {
       if (filter && !filter(e)) continue;
       const p = e.pts;
       for (let i = 0; i < p.length / 2 - 1; i++) {
@@ -135,7 +169,7 @@ export class StreetIndex {
   private grid = new Map<number, number[]>();
   private segs: number[] = []; // x1,y1,x2,y2,name
 
-  constructor(map: GameMap) {
+  constructor(map: World) {
     for (const r of map.roads) {
       if (r.name < 0 || r.cls === 'footway' || r.cls === 'cycleway' || r.cls === 'steps' || r.cls === 'path') continue;
       for (let i = 0; i < r.pts.length / 2 - 1; i++) {

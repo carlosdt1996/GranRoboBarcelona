@@ -3,9 +3,15 @@ import type { RoadGraph, REdge, EdgePose } from '../roads';
 import { Vehicle } from './vehicle';
 import { BODY_COLORS, type ModelKind } from '../render/cars';
 import { angDiff } from '../geom';
+import type { WallGrid } from '../collision';
+
+/** Algo con lo que el tráfico tiene que frenar (el coche del jugador o el jugador a pie). */
+export interface Obstacle { x: number; y: number; length: number }
+
+const PARKED_DROP = 450;
 
 const SPEED: Record<string, number> = {
-  trunk: 17, primary: 15, secondary: 14, tertiary: 13, residential: 11, unclassified: 10, living_street: 6, service: 6,
+  motorway: 22, trunk: 17, primary: 15, secondary: 14, tertiary: 13, residential: 11, unclassified: 10, living_street: 6, service: 6,
 };
 
 export interface AICar {
@@ -21,6 +27,8 @@ export interface AICar {
   ghost: number;
   stun: number;
   honk: number;
+  /** Huyendo (tras un disparo): va más deprisa y no se para por nada durante un rato. */
+  panic: number;
 }
 
 const tmpA: EdgePose = { x: 0, y: 0, a: 0 }, tmpB: EdgePose = { x: 0, y: 0, a: 0 }, tmpC: EdgePose = { x: 0, y: 0, a: 0 };
@@ -28,8 +36,14 @@ const tmpA: EdgePose = { x: 0, y: 0, a: 0 }, tmpB: EdgePose = { x: 0, y: 0, a: 0
 /** Tráfico que circula por el grafo de calles de OSM respetando los sentidos únicos. */
 export class Traffic {
   cars: AICar[] = [];
+  /** Coches sin conductor: abandonados, robados y dejados, o calcinados. */
+  parked: Vehicle[] = [];
   private mid: Float32Array;
+  private near: number[] = [];
+  private nearAt = { x: Infinity, y: Infinity };
   onHonk?: (x: number, y: number) => void;
+  /** Congestión real por arista (0 fluido .. 1 atasco, -1 cortada); null = sin datos. */
+  congestion: Float32Array | null = null;
 
   constructor(private graph: RoadGraph, private scene: THREE.Object3D, public max: number) {
     this.mid = new Float32Array(graph.edges.length * 2);
@@ -58,16 +72,42 @@ export class Traffic {
     return opts[0];
   }
 
+  /** Un coche concreto circulando por la calle más cercana a (x, y) (para las misiones). */
+  spawnAt(x: number, y: number, kind: ModelKind, color: string, cruise = 14): AICar | null {
+    const ne = this.graph.nearestEdge(x, y, (e) => !!SPEED[e.road.cls] && e.len > 12);
+    if (!ne) return null;
+    const e = ne.edge;
+    const v = new Vehicle(kind, color);
+    const car: AICar = { v, edge: e, next: null, prev: null, s: ne.s, lane: 0, speed: cruise * 0.5, cruise, stuck: 0, ghost: 0, stun: 0, honk: 0, panic: 0 };
+    car.next = this.pickNext(e);
+    this.place(car, 0);
+    v.syncMesh();
+    this.cars.push(car);
+    this.scene.add(v.mesh);
+    return car;
+  }
+
+  /** Coches que no se pueden quitar aunque estén lejos (objetivos de misión). */
+  keep = new Set<Vehicle>();
+
   private spawn(px: number, py: number, fx: number, fy: number) {
     const E = this.graph.edges;
+    if (Math.hypot(px - this.nearAt.x, py - this.nearAt.y) > 40) {
+      this.near = this.graph.edgesNear(px, py, 280);
+      this.nearAt = { x: px, y: py };
+    }
+    if (!this.near.length) return;
     for (let tries = 0; tries < 40; tries++) {
-      const i = Math.floor(Math.random() * E.length);
+      const i = this.near[Math.floor(Math.random() * this.near.length)];
       const dx = this.mid[i * 2] - px, dy = this.mid[i * 2 + 1] - py;
       const d = Math.hypot(dx, dy);
       if (d < 70 || d > 260) continue;
       if (d < 160 && (dx * fx + dy * fy) / d > 0.3) continue; // no aparecer delante de la cámara
       const e = E[i];
       if (!SPEED[e.road.cls] || e.len < 12) continue;
+      // tráfico real: más coches donde hay atasco, ninguno en calles cortadas
+      const cg = this.congestion ? this.congestion[i] : 0.3;
+      if (cg < 0 || Math.random() > 0.25 + cg * 0.75) continue;
       const s = e.len / 2;
       if (this.cars.some((c) => c.edge === e && Math.abs(c.s - s) < 14)) continue;
       const big = e.road.cls === 'primary' || e.road.cls === 'secondary' || e.road.cls === 'tertiary';
@@ -75,14 +115,44 @@ export class Traffic {
       const kind: ModelKind = big && r < 0.08 ? 'bus' : r < 0.32 ? 'taxi' : r < 0.44 ? 'van' : 'sedan';
       const color = kind === 'taxi' ? '#18161e' : kind === 'bus' ? '#d8202a' : kind === 'van' ? (Math.random() < 0.7 ? '#eeeeee' : '#3a6ad8') : BODY_COLORS[Math.floor(Math.random() * BODY_COLORS.length)];
       const v = new Vehicle(kind, color);
-      const cruise = SPEED[e.road.cls] * (0.85 + Math.random() * 0.3) * (kind === 'bus' ? 0.75 : 1);
-      const car: AICar = { v, edge: e, next: null, prev: null, s, lane: Math.floor(Math.random() * e.lanes), speed: cruise * 0.8, cruise, stuck: 0, ghost: 0, stun: 0, honk: 0 };
+      const cruise = SPEED[e.road.cls] * (0.85 + Math.random() * 0.3) * (kind === 'bus' ? 0.75 : 1) * (1 - 0.6 * Math.max(0, cg));
+      const car: AICar = { v, edge: e, next: null, prev: null, s, lane: Math.floor(Math.random() * e.lanes), speed: cruise * 0.8, cruise, stuck: 0, ghost: 0, stun: 0, honk: 0, panic: 0 };
       car.next = this.pickNext(e);
       this.place(car, 0);
       this.cars.push(car);
       this.scene.add(v.mesh);
       return;
     }
+  }
+
+  /** Quita todos los coches (al teletransportarse). */
+  clear(keep?: Vehicle) {
+    for (let i = this.cars.length - 1; i >= 0; i--) this.remove(i);
+    for (const v of this.parked) if (v !== keep) this.scene.remove(v.mesh);
+    this.parked = this.parked.filter((v) => v === keep);
+  }
+
+  /** Saca un coche del tráfico (lo roba el jugador o lo abandona su conductor). Su malla sigue en la escena. */
+  take(c: AICar): Vehicle {
+    const i = this.cars.indexOf(c);
+    if (i >= 0) this.cars.splice(i, 1);
+    return c.v;
+  }
+
+  /** Deja un coche aparcado (o abandonado) en la calle. */
+  park(v: Vehicle) {
+    if (!this.parked.includes(v)) this.parked.push(v);
+    if (!v.mesh.parent) this.scene.add(v.mesh);
+  }
+
+  unpark(v: Vehicle) {
+    this.parked = this.parked.filter((p) => p !== v);
+  }
+
+  /** Todos los vehículos del mundo menos el del jugador. */
+  *vehicles(): Iterable<Vehicle> {
+    for (const c of this.cars) yield c.v;
+    yield* this.parked;
   }
 
   private remove(i: number) {
@@ -127,16 +197,26 @@ export class Traffic {
     return tmpA;
   }
 
-  update(dt: number, player: Vehicle | null, px: number, py: number, heading: number) {
+  update(dt: number, obstacles: Obstacle[], px: number, py: number, heading: number, walls: WallGrid) {
     const fx = Math.sin(heading), fy = Math.cos(heading);
+    const player = obstacles[0];
     for (let i = this.cars.length - 1; i >= 0; i--)
-      if (Math.hypot(this.cars[i].v.x - px, this.cars[i].v.y - py) > 330) this.remove(i);
+      if (Math.hypot(this.cars[i].v.x - px, this.cars[i].v.y - py) > 330 && !this.keep.has(this.cars[i].v)) this.remove(i);
+    // aparcados y calcinados: se deslizan si los empujan y desaparecen al alejarse
+    const idle = { throttle: 0, brake: 0, steer: 0, handbrake: true };
+    for (let i = this.parked.length - 1; i >= 0; i--) {
+      const v = this.parked[i];
+      if (Math.hypot(v.x - px, v.y - py) > PARKED_DROP && !this.keep.has(v)) { this.scene.remove(v.mesh); this.parked.splice(i, 1); continue; }
+      if (v.speed > 0.05) v.step(idle, dt, walls);
+      v.syncMesh();
+    }
     for (let n = 0; n < 3 && this.cars.length < this.max; n++) this.spawn(px, py, fx, fy);
 
     for (const c of this.cars) {
       const v = c.v;
       if (c.stun > 0) { c.stun -= dt; c.speed = 0; c.honk -= dt; continue; }
       let target = c.cruise;
+      if (c.panic > 0) { c.panic -= dt; target *= 1.7; c.ghost = Math.max(c.ghost, 0.1); }
       // curvas: frenar antes de girar
       if (c.next) {
         const turn = Math.abs(angDiff(this.graph.pose(c.edge, c.edge.len, 0, tmpA).a, this.graph.pose(c.next, 0, 0, tmpB).a));
@@ -147,7 +227,7 @@ export class Traffic {
       const vfx = Math.sin(v.a), vfy = Math.cos(v.a);
       const look = 6 + c.speed * 1.4 + v.length / 2;
       let blocked = false;
-      const check = (o: Vehicle) => {
+      const check = (o: Obstacle) => {
         if (o === v) return;
         const dx = o.x - v.x, dy = o.y - v.y;
         if (Math.abs(dx) > look + 8 || Math.abs(dy) > look + 8) return;
@@ -161,7 +241,8 @@ export class Traffic {
       };
       if (c.ghost <= 0) {
         for (const o of this.cars) check(o.v);
-        if (player) check(player);
+        for (const o of this.parked) check(o);
+        for (const o of obstacles) check(o);
       } else c.ghost -= dt;
       c.speed += Math.max(-14 * dt, Math.min(4 * dt, target - c.speed));
       if (c.speed < 0.3) {

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 /**
  * Renderiza la escena a baja resolución y la cuantiza con tramado Bayer
  * para conseguir el aspecto de paleta limitada de las recreativas.
+ * Aplica también la luz de la hora del día: `grade` oscurece/tiñe lo que ilumina el sol
+ * (alfa 1) y respeta lo que brilla por sí mismo (alfa 0: ventanas, faros, cielo, fuego).
  */
 export class Pixelator {
   private rt: THREE.WebGLRenderTarget;
@@ -13,14 +15,15 @@ export class Pixelator {
   constructor(w: number, h: number) {
     this.rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true });
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { tDiffuse: { value: this.rt.texture }, levels: { value: 18 } },
+      uniforms: { tDiffuse: { value: this.rt.texture }, levels: { value: 18 }, grade: { value: new THREE.Vector3(1, 1, 1) } },
       vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
       fragmentShader: `
-        uniform sampler2D tDiffuse; uniform float levels; varying vec2 vUv;
+        uniform sampler2D tDiffuse; uniform float levels; uniform vec3 grade; varying vec2 vUv;
         float b2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
         float b4(vec2 a){ return b2(0.5 * a) * 0.25 + b2(a); }
         void main(){
-          vec3 c = texture2D(tDiffuse, vUv).rgb;
+          vec4 s = texture2D(tDiffuse, vUv);
+          vec3 c = s.rgb * mix(vec3(1.0), grade, s.a);
           float d = b4(gl_FragCoord.xy) - 0.5;
           c = floor(c * levels + 0.5 + d * 0.9) / levels;
           gl_FragColor = vec4(c, 1.0);
@@ -29,6 +32,10 @@ export class Pixelator {
       depthWrite: false,
     });
     this.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.mat));
+  }
+
+  get grade(): THREE.Vector3 {
+    return this.mat.uniforms.grade.value;
   }
 
   setSize(w: number, h: number) {

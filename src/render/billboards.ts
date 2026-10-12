@@ -14,7 +14,8 @@ export class Billboards {
   static camRight = { value: new THREE.Vector3(1, 0, 0) };
   count = 0;
 
-  constructor(atlas: SpriteAtlas, readonly capacity: number, dynamic = false) {
+  /** `glow`: sprites con luz propia (fuego, fogonazos): no los oscurece la noche. */
+  constructor(atlas: SpriteAtlas, readonly capacity: number, dynamic = false, glow = false) {
     const g = new THREE.InstancedBufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute([-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0], 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
@@ -49,10 +50,11 @@ export class Billboards {
         void main() {
           vec4 c = texture2D(map, vUv);
           if (c.a < 0.5) discard;
-          gl_FragColor = vec4(c.rgb, 1.0);
+          gl_FragColor = vec4(c.rgb, GLOW_ALPHA);
           #include <fog_fragment>
         }`,
       fog: true,
+      defines: { GLOW_ALPHA: glow ? '0.0' : '1.0' },
     });
     mat.uniforms.camRight = Billboards.camRight;
     this.mesh = new THREE.Mesh(g, mat);
@@ -64,6 +66,11 @@ export class Billboards {
     this.size.setXY(i, w, h);
     if (flip) this.rect.setXYZW(i, r.u + r.w, r.v, -r.w, r.h);
     else this.rect.setXYZW(i, r.u, r.v, r.w, r.h);
+  }
+
+  dispose() {
+    this.geo.dispose();
+    (this.mesh.material as THREE.Material).dispose();
   }
 
   commit(count: number) {

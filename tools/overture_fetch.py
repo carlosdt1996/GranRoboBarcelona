@@ -18,7 +18,8 @@ from shapely.geometry import mapping, box
 
 BASE = "https://overturemaps-us-west-2.s3.amazonaws.com"
 RELEASE = os.environ.get("OVERTURE_RELEASE", "2026-09-23.1")
-BBOX = tuple(map(float, sys.argv[1:5])) if len(sys.argv) >= 5 else (2.140, 41.368, 2.200, 41.410)
+# Por defecto, el término municipal de Barcelona entero (de Collserola al mar, del Besòs a Montjuïc)
+BBOX = tuple(map(float, sys.argv[1:5])) if len(sys.argv) >= 5 else (2.050, 41.315, 2.230, 41.470)
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 S = requests.Session()
 
@@ -142,6 +143,12 @@ def save(name, feats):
 
 def main():
     print(f"bbox={BBOX} release={RELEASE}", file=sys.stderr)
+
+    print("Límites municipales...", file=sys.stderr)
+    rows = scan("theme=divisions/type=division_area/", ["id", "geometry", "names", "subtype", "class", "country", "region"])
+    save("divisions.geojson", [{"type": "Feature", "geometry": mapping(r["geometry"]), "properties": {
+        "kind": "division", "name": first_name(r), "subtype": r.get("subtype"), "class": r.get("class")}}
+        for r in rows if r.get("subtype") in ("locality", "county", "localadmin", "borough", "neighborhood", "macrohood")])
 
     print("Edificios...", file=sys.stderr)
     rows = scan("theme=buildings/type=building/", ["id", "has_parts", "geometry", "names", "height", "num_floors", "class", "subtype", "sources", "roof_shape", "facade_color", "roof_color"])

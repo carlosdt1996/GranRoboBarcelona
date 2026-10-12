@@ -13,15 +13,31 @@
     <div class="hud" id="hud" hidden>
       <div id="speedo">
         <div class="row"><span id="speed">  0</span><small>km/h</small></div>
+        <div id="alt" hidden></div>
         <div id="tacho"></div>
       </div>
       <div id="street"></div>
-      <canvas id="radar" width="132" height="132"></canvas>
+      <canvas id="radar" width="176" height="176"></canvas>
+      <div id="stars"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+      <div id="gpsinfo" hidden><b>▲</b><span></span></div>
       <button id="musicbtn" type="button">♪ ON</button>
-      <div id="credit">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · Overture Maps</div>
+      <button id="mapbtn" type="button">MAPA</button>
+      <button id="enterbtn" type="button">BAJAR</button>
+      <button id="pausebtn" type="button">⚙</button>
+      <div id="health"><b>♥</b><i><u></u></i><i class="arm"><u></u></i></div>
+      <div id="money">$00000000</div>
+      <div id="objective" hidden></div>
+      <div id="timer" hidden></div>
+      <div id="big" hidden><b></b><span></span></div>
+      <div id="dialog" hidden><canvas width="16" height="32"></canvas><div><b></b><span></span></div><i>▶</i></div>
+      <button id="weaponbtn" type="button"></button>
+      <div id="clock"></div>
+      <div id="wasted" hidden>HAS MUERTO</div>
+      <div id="credit">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · Overture Maps · Fachadas: <a href="https://www.mapillary.com" target="_blank" rel="noopener">Mapillary</a> (CC-BY-SA)</div>
       <div id="touch">
         <div id="steer"><div class="knob"></div></div>
         <div class="btns">
+          <div class="btn fire" data-btn="fire">FUEGO</div>
           <div class="btn drift" data-btn="drift">DRIFT</div>
           <div class="btn gas" data-btn="gas">GAS</div>
           <div class="btn brake" data-btn="brake">FRENO</div>
@@ -31,14 +47,16 @@
 
     <div class="screen" id="title">
       <div class="logo">GRAN ROBO<span>BARCELONA</span></div>
-      <div class="sub">L'EIXAMPLE · DEMO</div>
+      <div class="sub">BARCELONA · TODA LA CIUDAD</div>
       <div class="bar" id="loadbar"><i></i></div>
       <div class="blink" id="start" hidden>PULSA PARA EMPEZAR</div>
       <div class="help" id="help">
-        ↑ ↓ ACELERAR / FRENAR · ← → GIRAR · ESPACIO DERRAPE<br />
-        R VOLVER A LA CARRETERA · M MÚSICA
+        ↑ ↓ ACELERAR / FRENAR · ← → GIRAR · ESPACIO DERRAPE / CORRER<br />
+        F SUBIR / BAJAR · X O CLIC DISPARAR · TAB RUEDA DE ARMAS · H HELICÓPTERO<br />
+        R VOLVER A LA CARRETERA · M MAPA · N MÚSICA
       </div>
     </div>
+    <div id="fade"></div>
     <div class="screen" id="rotate"><div class="sub">GIRA EL MÓVIL ↻</div></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
