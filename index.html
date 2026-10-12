@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1d1650" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Gran Robo Barcelona</title>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <div class="hud" id="hud" hidden>
+      <div id="speedo">
+        <div class="row"><span id="speed">  0</span><small>km/h</small></div>
+        <div id="tacho"></div>
+      </div>
+      <div id="street"></div>
+      <canvas id="radar" width="132" height="132"></canvas>
+      <button id="musicbtn" type="button">♪ ON</button>
+      <div id="credit">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · Overture Maps</div>
+      <div id="touch">
+        <div id="steer"><div class="knob"></div></div>
+        <div class="btns">
+          <div class="btn drift" data-btn="drift">DRIFT</div>
+          <div class="btn gas" data-btn="gas">GAS</div>
+          <div class="btn brake" data-btn="brake">FRENO</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="title">
+      <div class="logo">GRAN ROBO<span>BARCELONA</span></div>
+      <div class="sub">L'EIXAMPLE · DEMO</div>
+      <div class="bar" id="loadbar"><i></i></div>
+      <div class="blink" id="start" hidden>PULSA PARA EMPEZAR</div>
+      <div class="help" id="help">
+        ↑ ↓ ACELERAR / FRENAR · ← → GIRAR · ESPACIO DERRAPE<br />
+        R VOLVER A LA CARRETERA · M MÚSICA
+      </div>
+    </div>
+    <div class="screen" id="rotate"><div class="sub">GIRA EL MÓVIL ↻</div></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
