@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root { --pink: #ff4f9a; --yellow: #ffe23c; --cyan: #5af0ff; --purple: #2a1640; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #120a20; color: #fff; touch-action: none; user-select: none; -webkit-user-select: none; }
+body { font-family: 'Press Start 2P', ui-monospace, monospace; }
+#game { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+
+.hud { position: fixed; inset: 0; pointer-events: none; }
+#speedo { position: absolute; left: max(14px, env(safe-area-inset-left)); top: 12px; text-shadow: 3px 3px 0 #2a0a3a; }
+#speedo .row { display: flex; align-items: baseline; gap: 8px; }
+#speed { font-size: 30px; color: var(--yellow); white-space: pre; }
+#speedo small { font-size: 11px; color: var(--pink); }
+#tacho { display: flex; gap: 2px; margin-top: 8px; }
+#tacho i { width: 6px; height: 12px; display: block; box-shadow: 1px 1px 0 #2a0a3a; }
+#street { position: absolute; top: 14px; left: 50%; transform: translate(-50%, -120%); padding: 10px 16px; font-size: 13px; color: #fff;
+  background: linear-gradient(#2a6ad8, #1a3a98); border: 3px solid #fff; box-shadow: 4px 4px 0 #2a0a3a; transition: transform .35s steps(6); white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+#street.show { transform: translate(-50%, 0); }
+#radar { position: absolute; right: max(12px, env(safe-area-inset-right)); top: 10px; width: 132px; height: 132px; border-radius: 50%; border: 3px solid #fff; box-shadow: 4px 4px 0 #2a0a3a; image-rendering: pixelated; }
+#credit { position: absolute; left: 8px; bottom: 6px; font: 9px ui-monospace, monospace; color: #fff; opacity: .7; text-shadow: 1px 1px 0 #000; }
+#credit a { color: inherit; }
+#musicbtn { position: absolute; right: 16px; top: 152px; pointer-events: auto; font: inherit; font-size: 10px; color: #fff; background: #0006; border: 2px solid #fff; padding: 6px 8px; }
+
+/* controles táctiles */
+#touch { display: none; }
+.coarse #touch { display: block; }
+#steer { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: 18px; width: 190px; height: 110px; pointer-events: auto; border: 3px solid #ffffff88; border-radius: 55px; background: #00000033; display: flex; align-items: center; justify-content: center; }
+#steer .knob { width: 70px; height: 70px; border-radius: 50%; background: #ffffffcc; box-shadow: 3px 3px 0 #2a0a3a; }
+#steer::before, #steer::after { content: '◀'; position: absolute; left: 14px; font-size: 16px; opacity: .7; }
+#steer::after { content: '▶'; left: auto; right: 14px; }
+.btns { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: 18px; display: grid; grid-template-columns: auto auto; gap: 12px; align-items: end; }
+.btn { pointer-events: auto; width: 78px; height: 78px; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 3px 3px 0 #2a0a3a; }
+.btn.on { filter: brightness(1.6); transform: translateY(2px); }
+.btn.gas { width: 96px; height: 96px; background: #2ac86acc; grid-row: span 2; }
+.btn.brake { background: #e8304acc; }
+.btn.drift { background: #8a4af0cc; width: 64px; height: 64px; }
+
+/* pantallas */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 16px;
+  background: linear-gradient(#1d1650 0%, #3a1f72 35%, #c8457f 70%, #ffa36c 100%); }
+.screen.hidden { display: none; }
+.logo { font-size: clamp(22px, 6vw, 56px); line-height: 1.25; color: #fff; text-shadow: 0 4px 0 #ff4f9a, 0 8px 0 #7a2b8c, 6px 12px 0 #1d1650; letter-spacing: 2px; }
+.logo span { display: block; color: var(--yellow); }
+.sub { font-size: clamp(9px, 2vw, 13px); color: #fff; text-shadow: 2px 2px 0 #2a0a3a; }
+.blink { animation: blink 1s steps(2) infinite; color: var(--yellow); font-size: clamp(11px, 2.4vw, 16px); text-shadow: 2px 2px 0 #2a0a3a; }
+@keyframes blink { 50% { opacity: 0; } }
+.help { font-size: 9px; line-height: 1.9; color: #fff; opacity: .9; text-shadow: 1px 1px 0 #2a0a3a; }
+.bar { width: min(320px, 70vw); height: 14px; border: 3px solid #fff; background: #2a0a3a; }
+.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff4f9a, #ffe23c); }
+#rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; z-index: 50; } }
