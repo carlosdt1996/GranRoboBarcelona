@@ -88,7 +88,7 @@ export class Interiors {
   add(id: string, kind: RoomKind, name: string, lon: number, lat: number): Room {
     const [w, d] = SIZE[kind];
     const i = this.rooms.length;
-    const ox = 40000 + (i % 10) * 60, oy = 40000 + Math.floor(i / 10) * 60;
+    const ox = 90000 + (i % 10) * 60, oy = 90000 + Math.floor(i / 10) * 60;
     const [x, y, a] = sidewalk(this.world, this.graph, lon, lat, 2.4);
     const room: Room = {
       id, kind, name, door: [x, y, a + Math.PI / 2], ox, oy, w, d,
@@ -231,7 +231,7 @@ export class Interiors {
   enter(r: Room): [number, number, number] {
     this.current = r;
     for (const o of this.rooms) o.group.visible = o === r;
-    return [r.exit[0], r.exit[1] + 1.2, 0];
+    return [r.exit[0], r.exit[1] + Math.min(2.6, r.d / 3), 0];
   }
 
   /** Salir: devuelve dónde aparece en la calle (x, y, rumbo). */

@@ -210,6 +210,8 @@ export function guidance(r: Float32Array, x: number, y: number, heading: number)
   return { left, rel };
 }
 
+const buf = { cost: new Float64Array(0), via: new Int32Array(0), mark: new Uint32Array(0), stamp: 0 };
+
 /**
  * Ruta por las calles de (px, py) a (tx, ty): A* sobre el grafo de OSM. En coche respeta los sentidos
  * únicos y prefiere las vías rápidas; a pie (`incoming` = aristas que llegan a cada nodo) va en cualquier sentido.
@@ -220,25 +222,31 @@ export function findRoute(g: RoadGraph, incoming: number[][] | null, px: number,
   const from = g.nearestEdge(px, py, (e) => Math.cos(g.pose(e, e.len / 2, 0, tmp).a - heading) > 0.2) ?? g.nearestEdge(px, py);
   const to = g.nearestEdge(tx, ty);
   if (!from || !to) return null;
+  // búferes reutilizados entre llamadas (la policía recalcula rutas a menudo): un sello marca los válidos
   const n = g.nodes.length;
-  const cost = new Float64Array(n).fill(Infinity), via = new Int32Array(n).fill(-1);
+  if (buf.cost.length < n) { buf.cost = new Float64Array(n); buf.via = new Int32Array(n); buf.mark = new Uint32Array(n); }
+  const stamp = ++buf.stamp;
+  const { cost: costArr, via, mark } = buf;
+  const cost = {
+    get: (i: number) => (mark[i] === stamp ? costArr[i] : Infinity),
+    set: (i: number, c: number, e: number) => { mark[i] = stamp; costArr[i] = c; via[i] = e; },
+  };
   const goal = to.edge.from, start = from.edge.to;
   const h = (i: number) => Math.hypot(g.nodes[i].x - g.nodes[goal].x, g.nodes[i].y - g.nodes[goal].y) / (onFoot ? 1 : 25);
   const edgeCost = (e: REdge) => onFoot ? e.len : e.len / (SPEED[e.road.cls] ?? 6);
   const heap = new Heap();
-  cost[start] = 0;
+  cost.set(start, 0, -1);
   heap.push(h(start), start);
   let found = start === goal, steps = 0;
-  while (heap.size && !found && steps++ < 200000) {
+  while (heap.size && !found && steps++ < 400000) {
     const u = heap.pop();
     const nexts = onFoot && incoming ? [...g.nodes[u].out, ...incoming[u]] : g.nodes[u].out;
     for (const ei of nexts) {
       const e = g.edges[ei];
       const v = e.from === u ? e.to : e.from;
-      const c = cost[u] + edgeCost(e);
-      if (c < cost[v]) {
-        cost[v] = c;
-        via[v] = ei;
+      const c = cost.get(u) + edgeCost(e);
+      if (c < cost.get(v)) {
+        cost.set(v, c, ei);
         if (v === goal) found = true;
         heap.push(c + h(v), v);
       }

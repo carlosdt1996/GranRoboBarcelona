@@ -10,7 +10,8 @@ Salida (public/data/bcn/):
 Coordenadas en metros (x = este, y = norte) alrededor del centro de la ciudad. Dentro de cada
 tesela las geometrías van en decímetros relativos a la esquina de la tesela, con deltas.
 
-Uso: python3 tools/build_city.py
+Uso: python3 tools/build_city.py            (Barcelona)
+     REGION=valles python3 tools/build_city.py   (Barcelona + Vallès Occidental + Vallès Oriental)
 Requiere: pip install shapely numpy pillow (y haber ejecutado overture_fetch.py y terrain_fetch.py)
 """
 import json, math, os, sys, hashlib, shutil, warnings
@@ -27,7 +28,10 @@ RAW = os.path.join(ROOT, "data", "raw")
 OUT = os.path.join(ROOT, "public", "data", "bcn")
 TILE = 512          # lado de tesela en metros
 MARGIN = 150        # se incluye lo que quede a menos de esto del término municipal
-TERRAIN_RES = 16    # metros por celda de la rejilla de relieve
+# Qué se genera: solo Barcelona o Barcelona con los dos Vallès (Terrassa, Sabadell, Granollers...)
+REGION_NAME = os.environ.get("REGION", "barcelona")
+BIG = REGION_NAME == "valles"
+TERRAIN_RES = 32 if BIG else 16  # metros por celda de la rejilla de relieve
 
 # Proyección local equirectangular centrada en la ciudad (la misma que usa el juego)
 LON0, LAT0 = 2.1400, 41.3925
@@ -64,16 +68,26 @@ def lines(g):
 
 # ------------------------------------------------------------- término municipal
 city = None
+comarques = []
 for f in load("divisions.geojson"):
     p = f["properties"]
     if p["name"] == "Barcelona" and p["subtype"] == "locality":
         city = proj(shape(f["geometry"]))
+    if BIG and p["name"] in ("Vallès Occidental", "Vallès Oriental") and p["subtype"] in ("county", "locality", "localadmin"):
+        comarques.append(proj(shape(f["geometry"])).buffer(0))
 assert city is not None, "No se encontró el límite de Barcelona en divisions.geojson"
 city = max(polys(city.buffer(0)), key=lambda p: p.area)  # sin islotes sueltos
-REGION = city.buffer(MARGIN, join_style=2).simplify(5)
+if BIG:
+    assert len(comarques) >= 2, f"No se encontraron los dos Vallès en divisions.geojson ({len(comarques)})"
+    # Barcelona + los dos Vallès, un solo territorio continuo (se toca con Collserola y Montcada)
+    whole = shapely.union_all([city.buffer(30)] + [c.buffer(30) for c in comarques])
+    REGION = max(polys(whole), key=lambda p: p.area).buffer(MARGIN - 30, join_style=2).simplify(8)
+    REGION = Polygon(REGION.exterior)  # sin agujeros
+else:
+    REGION = city.buffer(MARGIN, join_style=2).simplify(5)
 minx, miny, maxx, maxy = REGION.bounds
 BOUNDS = [math.floor(minx / TILE) * TILE, math.floor(miny / TILE) * TILE, math.ceil(maxx / TILE) * TILE, math.ceil(maxy / TILE) * TILE]
-print(f"Barcelona: {city.area / 1e6:.1f} km² · región {BOUNDS}", file=sys.stderr)
+print(f"Barcelona: {city.area / 1e6:.1f} km² · región {REGION.area / 1e6:.0f} km² · {BOUNDS}", file=sys.stderr)
 prep_region = prep(REGION)
 
 names, name_idx = [], {}
@@ -322,7 +336,7 @@ for (tx, ty), d in sorted(tiles.items()):
     tile_list.append([tx, ty])
 # ------------------------------------------------------- mapa de la ciudad (tecla M)
 from PIL import Image, ImageDraw
-MPP = 4  # metros por píxel
+MPP = 10 if BIG else 4  # metros por píxel
 W, Hh = (BOUNDS[2] - BOUNDS[0]) // MPP, (BOUNDS[3] - BOUNDS[1]) // MPP
 img = Image.new("RGB", (W, Hh), "#1a0e2a")
 dr = ImageDraw.Draw(img)
@@ -350,10 +364,15 @@ img.quantize(colors=32, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NON
 districts = []
 for f in load("divisions.geojson"):
     p = f["properties"]
-    if p["subtype"] != "macrohood": continue
     g = proj(shape(f["geometry"]))
-    inter = g.intersection(city)
-    if inter.area < 0.6 * g.area: continue
+    if p["subtype"] == "macrohood":
+        inter = g.intersection(city)  # distritos de Barcelona
+        if inter.area < 0.6 * g.area: continue
+    elif BIG and p["subtype"] in ("locality", "localadmin") and p["name"] not in ("Barcelona", "Vallès Occidental", "Vallès Oriental", "Barcelonès"):
+        inter = g.intersection(REGION)  # municipios del Vallès
+        if inter.area < 0.8 * g.area or inter.area < 2e6: continue
+    else:
+        continue
     c = inter.representative_point() if not inter.centroid.within(inter) else inter.centroid
     districts.append([p["name"], round(c.x), round(c.y)])
 
@@ -369,5 +388,7 @@ world = {
 }
 with open(os.path.join(OUT, "world.json"), "w", encoding="utf-8") as f:
     json.dump(world, f, separators=(",", ":"), ensure_ascii=False)
-print(f"{OUT}: world.json {os.path.getsize(os.path.join(OUT, 'world.json')) / 1e6:.1f} MB · "
+import subprocess
+subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "gzip_data.py")], check=True)
+print(f"{OUT}: world.json "
       f"{len(tile_list)} teselas {total / 1e6:.1f} MB · terrain.bin {NX * NY * 2 / 1e6:.1f} MB", file=sys.stderr)

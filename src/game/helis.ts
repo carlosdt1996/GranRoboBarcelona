@@ -11,6 +11,9 @@ const SPOTS: [string, number, number, number][] = [
   ['Platja de la Barceloneta', 2.1931, 41.3792, 45],
   ['Parc del Fòrum', 2.2268, 41.4103, 45],
   ['Parc de Collserola (Tibidabo)', 2.1175, 41.4217, 90],
+  ['Aeroport de Sabadell', 2.1035, 41.5215, 0],
+  ['Parc de Vallparadís (Terrassa)', 2.0172, 41.5662, 45],
+  ['Granollers · Parc Torras Villà', 2.2860, 41.6050, 90],
 ];
 
 /** Todos los helicópteros: el que pilota el jugador y los que esperan aparcados. */

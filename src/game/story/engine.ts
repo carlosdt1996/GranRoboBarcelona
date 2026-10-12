@@ -96,6 +96,7 @@ export class Story {
       this.giverActor.a = Math.PI;
       this.giverMarker = this.c.markers.add(gx, gy - 1.6, 0, 'mission', this.next!.title, 0, '#ffd020');
       this.giverMarker.mesh.position.y = 1000;
+      this.giverMarker.mesh.scale.set(0.5, 0.55, 0.5);
     }
     if (!inRoom && this.giverMarker) {
       this.c.markers.remove(this.giverMarker);
@@ -133,7 +134,9 @@ export class Story {
     if (r.marker) this.c.markers.remove(r.marker);
     r.marker = this.c.markers.add(x, y, 0, 'mission', '', 0, color);
     const p = this.c.player();
-    this.c.gps.setTarget(x, y, p.x, p.y, p.a, p.onFoot);
+    // dentro de un local, la ruta sale de su puerta
+    const [px, py] = p.inside ? [p.inside.door[0], p.inside.door[1]] : [p.x, p.y];
+    this.c.gps.setTarget(x, y, px, py, p.a, p.onFoot);
   }
 
   private begin(s: Step) {

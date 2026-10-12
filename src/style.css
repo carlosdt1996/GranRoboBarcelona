@@ -120,7 +120,7 @@ body { font-family: 'Press Start 2P', ui-monospace, monospace; }
 #big b { font-size: 26px; color: #ffd27a; text-shadow: 4px 4px 0 #ff3c6a, 6px 6px 0 #2a0a3a; font-weight: normal; text-align: center; }
 #big span { font-size: 13px; color: #fff; text-shadow: 2px 2px 0 #000; }
 @keyframes bigin { from { transform: scale(1.6); opacity: 0; } }
-#dialog { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); width: min(720px, 92vw); display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: #1a0e2ae8; border: 3px solid #fff; box-shadow: 5px 5px 0 #000; pointer-events: auto; cursor: pointer; z-index: 6; }
+#dialog { position: absolute; left: 50%; bottom: 13.5%; transform: translateX(-50%); width: min(720px, 92vw); display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: #1a0e2ae8; border: 3px solid #fff; box-shadow: 5px 5px 0 #000; pointer-events: auto; cursor: pointer; z-index: 6; }
 #dialog canvas { width: 48px; height: 96px; image-rendering: pixelated; flex: none; }
 #dialog div { display: flex; flex-direction: column; gap: 8px; flex: 1; }
 #dialog b { font-size: 11px; color: #ffe24a; font-weight: normal; }
@@ -143,3 +143,5 @@ body { font-family: 'Press Start 2P', ui-monospace, monospace; }
 #shop button.owned { opacity: .5; } #shop button.poor { color: #ff8a8a; }
 #shop .pm-help { font-size: 8px; color: #aaa; text-align: center; margin-top: 6px; }
 #wheel .wi.locked { opacity: .3; filter: grayscale(1); }
+/* durante las cinemáticas solo se ven el diálogo y los rótulos */
+.hud.cine > :not(#dialog):not(#big):not(#credit) { visibility: hidden; }

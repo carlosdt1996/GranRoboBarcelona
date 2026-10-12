@@ -2,7 +2,7 @@
 """Descarga el relieve (modelo digital de elevaciones) para un bbox y lo guarda en data/raw/terrain.npz.
 
 Usa las teselas públicas "Terrarium" de AWS Open Data (elevation-tiles-prod), que combinan
-SRTM, EU-DEM y otras fuentes abiertas. A zoom 14 cada píxel mide ~7 m en Barcelona.
+SRTM, EU-DEM y otras fuentes abiertas. A zoom 14 cada píxel mide ~7 m en Barcelona (TERRAIN_Z=13 para regiones grandes).
 
 Uso: python3 tools/terrain_fetch.py [minlon minlat maxlon maxlat]
 Requiere: pip install pillow numpy requests
@@ -12,7 +12,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-Z = 14
+Z = int(os.environ.get("TERRAIN_Z", "14"))  # 13 para regiones grandes (~14 m por píxel)
 URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 BBOX = tuple(map(float, sys.argv[1:5])) if len(sys.argv) >= 5 else (2.050, 41.315, 2.230, 41.470)
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "raw")

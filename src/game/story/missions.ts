@@ -55,7 +55,7 @@ export const MISSIONS: Mission[] = [
       { t: 'goto', at: [1.9915, 41.5590], text: 'Ve al desguace del Nando en Can Parellada.' },
       { t: 'talk', lines: [['nando', 'Ese Seat lleva tres matrículas y dos dueños muertos. El tercero, si quieres, eres tú.'], ['pau', 'Me quedo la matrícula que no tenga multas.'], ['nando', 'Entonces ninguna. Y no abras el maletero, que el último dueño sigue dentro.']] },
       { t: 'steal', at: [1.9925, 41.5585], kind: 'sedan', color: '#f2f2f2', text: 'Sube al coche blanco del desguace.' },
-      { t: 'deliver', at: [2.0068, 41.5628], text: 'Vuelve a la Rambleta del Pare Alegre.' },
+      { t: 'deliver', at: [2.0077, 41.5553], text: 'Vuelve a la Rambleta del Pare Alegre.' },
     ],
     outro: [['tete', 'Perfecto. Ya tienes coche. Mañana bajas a Barcelona. Si no vuelves, ¿me dejas el piso?']],
     reward: 500,
@@ -283,7 +283,7 @@ export const MISSIONS: Mission[] = [
     steps: [
       { t: 'pickup', at: [2.1835, 41.3755], text: 'Recoge el maletín en el Moll d\'Espanya.', stars: 3 },
       { t: 'escape', stars: 3, text: 'Despista a la policía.' },
-      { t: 'goto', at: [2.0068, 41.5628], text: 'Vuelve a casa: Rambleta del Pare Alegre, Terrassa.' },
+      { t: 'goto', at: [2.0077, 41.5553], text: 'Vuelve a casa: Rambleta del Pare Alegre, Terrassa.' },
     ],
     outro: [
       ['tete', '¿Esto es... todo para nosotros?'],

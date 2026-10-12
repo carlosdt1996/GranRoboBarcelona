@@ -55,7 +55,7 @@ if (mobile) document.body.classList.add('coarse');
 // Inicio de la demo de Barcelona: Passeig de Gràcia a la altura de la Casa Batlló
 const START = { lon: 2.16725, lat: 41.38975, street: 'Passeig de Gràcia' };
 // Piso franco de Pau Rovira: Rambleta del Pare Alegre, Terrassa
-const SAFEHOUSE = { lon: 2.0068, lat: 41.5628 };
+const SAFEHOUSE = { lon: 2.0077, lat: 41.5553 };
 const IDLE: Controls = { throttle: 0, brake: 0, steer: 0, handbrake: false };
 /** Jefes de la historia y su local. */
 const BOSSES: [string, Room['kind']][] = [['tete', 'piso'], ['remei', 'bar'], ['biel', 'nave'], ['enric', 'mansion'], ['mascarell', 'taller'], ['montse', 'bar']];
@@ -213,6 +213,7 @@ async function main() {
   }
   combat.playerCar = car;
   combat.walker = car ? null : walker;
+  $('enterbtn').textContent = car ? 'BAJAR' : 'SUBIR';
   cam.snap(focus());
 
   // precarga alrededor del punto de salida: teselas, edificios y suelo
@@ -299,6 +300,7 @@ async function main() {
   };
   const cutscene = new Cutscene();
   const director = new Director();
+  director.ray = (x0, y0, x1, y1) => walls.raycast(x0, y0, x1, y1);
   cutscene.onDone = () => cam.snap(focus());
 
   // ------------------------------------------------------- subir y bajar del coche
@@ -734,7 +736,7 @@ async function main() {
   };
   cityMap.onWaypoint = (x, y) => {
     const f = focus();
-    gps.setTarget(x, y, f.x, f.y, f.a, !car && !heli);
+    gps.setTarget(x, y, inside ? inside.door[0] : f.x, inside ? inside.door[1] : f.y, f.a, !car && !heli);
   };
   cityMap.onClearWaypoint = () => gps.clear();
   gps.onArrive = () => hud.say('HAS LLEGADO');
@@ -891,7 +893,8 @@ async function main() {
     if (input.pressed('KeyN')) toggleMusic();
     if (input.pressed('KeyV') && (car || heli)) hud.say(sound.nextStation());
 
-    // diálogos y cinemáticas: la acción se para
+    // diálogos y cinemáticas: la acción se para y el HUD se esconde
+    $('hud').classList.toggle('cine', hud.talking || cutscene.active);
     if (hud.talking) {
       if (input.pressed('Enter') || input.pressed('Space') || input.pressed('KeyF')) hud.advance();
       input.enterPressed();
@@ -1049,7 +1052,7 @@ async function main() {
     const [rl, rr] = helis.rotorLevel(f.x, f.y, f.z);
     sound.setRotor(rl, rr);
     hud.altitude(heli ? alt : null);
-    gps.update(dt, f.x, f.y, f.a, onFoot, !!heli);
+    gps.update(dt, sx, sy, f.a, onFoot, !!heli);
     hud.route = inside ? null : gps.route;
     hud.gps(gps.target && !inside ? (gps.route && !heli ? guidance(gps.route, f.x, f.y, f.a)
       : { left: Math.hypot(gps.target.x - f.x, gps.target.y - f.y), rel: Math.atan2(Math.sin(Math.atan2(gps.target.x - f.x, gps.target.y - f.y) - f.a), Math.cos(Math.atan2(gps.target.x - f.x, gps.target.y - f.y) - f.a)) }) : null);

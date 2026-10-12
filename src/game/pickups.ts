@@ -107,7 +107,7 @@ export class Markers {
     for (const m of this.list) {
       const d = Math.hypot(m.x - x, m.y - y);
       m.mesh.visible = d < 400 && m.mesh.userData.off !== true;
-      m.mesh.position.y = m.x > 30000 ? 1000 : Vehicle.ground(m.x, m.y); // los de los interiores están a 1000 m
+      m.mesh.position.y = m.x > 80000 ? 1000 : Vehicle.ground(m.x, m.y); // los de los interiores están a 1000 m
       (m.mesh.material as THREE.MeshBasicMaterial).opacity = 0.35 + Math.sin(this.t * 4) * 0.12;
     }
   }

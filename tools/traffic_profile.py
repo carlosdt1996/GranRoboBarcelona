@@ -12,7 +12,7 @@ Estados: 0 sin datos · 1 muy fluido · 2 fluido · 3 denso · 4 muy denso · 5 
 
 Uso: python3 tools/traffic_profile.py
 """
-import csv, datetime as dt, io, json, math, os, sys
+import csv, datetime as dt, gzip, io, json, math, os, sys
 from collections import defaultdict
 import requests
 
@@ -21,7 +21,8 @@ OUT = os.path.join(ROOT, "public", "data", "bcn", "traffic.json")
 API = "https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id="
 S = requests.Session()
 
-world = json.load(open(os.path.join(ROOT, "public", "data", "bcn", "world.json"), encoding="utf-8"))
+_w = os.path.join(ROOT, "public", "data", "bcn", "world.json")
+world = json.load(gzip.open(_w + ".gz", "rt", encoding="utf-8") if os.path.exists(_w + ".gz") else open(_w, encoding="utf-8"))
 LON0, LAT0 = world["origin"]
 KX, KY = 111320 * math.cos(math.radians(LAT0)), 110574
 

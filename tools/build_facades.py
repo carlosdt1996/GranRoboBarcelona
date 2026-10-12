@@ -13,7 +13,7 @@ Requiere: MAPILLARY_TOKEN en el entorno o en .env.local, y haber ejecutado build
 Salida: public/data/bcn/facades/X_Y_P.webp y el campo "f" de cada tiles/X_Y.json.
 """
 import concurrent.futures as cf
-import io, json, math, os, sys, time
+import gzip, io, json, math, os, sys, time
 from collections import defaultdict
 import numpy as np
 import requests
@@ -53,12 +53,17 @@ def token():
     return t
 
 
-world = json.load(open(os.path.join(BCN, "world.json"), encoding="utf-8"))
+def read_json(p):
+    return json.load(gzip.open(p + ".gz", "rt", encoding="utf-8") if os.path.exists(p + ".gz") else open(p, encoding="utf-8"))
+
+
+world = read_json(os.path.join(BCN, "world.json"))
 LON0, LAT0 = world["origin"]
 KX, KY = 111320 * math.cos(math.radians(LAT0)), 110574
 TILE = world["tile"]
 tm = world["terrain"]
-H = np.fromfile(os.path.join(BCN, "terrain.bin"), dtype="<i2").astype(np.float32).reshape(tm["ny"], tm["nx"]) / 10
+_tb = os.path.join(BCN, "terrain.bin")
+H = (np.frombuffer(gzip.open(_tb + ".gz").read(), dtype="<i2") if os.path.exists(_tb + ".gz") else np.fromfile(_tb, dtype="<i2")).astype(np.float32).reshape(tm["ny"], tm["nx"]) / 10
 
 
 def to_xy(lon, lat): return ((lon - LON0) * KX, (lat - LAT0) * KY)
@@ -94,7 +99,7 @@ tiles = {}
 for tx in range(math.floor((x0 - 60) / TILE), math.floor((x1 + 60) / TILE) + 1):
     for ty in range(math.floor((y0 - 60) / TILE), math.floor((y1 + 60) / TILE) + 1):
         p = os.path.join(BCN, "tiles", f"{tx}_{ty}.json")
-        if os.path.exists(p): tiles[(tx, ty)] = json.load(open(p, encoding="utf-8"))
+        if os.path.exists(p) or os.path.exists(p + ".gz"): tiles[(tx, ty)] = read_json(p)
 
 polys, owner = [], []  # huellas a ras de suelo (para oclusiones y para saber qué hay delante)
 for (tx, ty), t in tiles.items():
@@ -405,7 +410,7 @@ for key, t in tiles.items():
         total += os.path.getsize(p)
     t["f"] = (t["f"] or []) + recs
     t["fp"] = old + len(pages)
-    with open(os.path.join(BCN, "tiles", f"{tx}_{ty}.json"), "w", encoding="utf-8") as fh:
-        json.dump(t, fh, separators=(",", ":"), ensure_ascii=False)
+    with open(os.path.join(BCN, "tiles", f"{tx}_{ty}.json.gz"), "wb") as fh:
+        fh.write(gzip.compress(json.dumps(t, separators=(",", ":"), ensure_ascii=False).encode("utf-8"), 9, mtime=0))
 
 print(f"fachadas: {sum(len(v) for v in by_tile.values())} texturas · {total / 1e6:.1f} MB de atlas", file=sys.stderr)

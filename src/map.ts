@@ -1,6 +1,7 @@
 // Barcelona entera en teselas (generadas por tools/build_city.py) que se cargan alrededor del jugador.
 // Coordenadas en metros: x = este, y = norte (origen en el centro de la ciudad).
 import { Terrain } from './terrain';
+import { fetchBytes } from './net';
 import { view } from './view';
 
 interface RawWorld {
@@ -159,8 +160,8 @@ export class World {
   }
 
   static async load(base: string, onProgress?: (f: number) => void): Promise<World> {
-    const raw: RawWorld = await fetchJson(`${base}world.json`, onProgress);
-    const terrain = await Terrain.load(`${base}terrain.bin`, raw.terrain);
+    const raw: RawWorld = await fetchJson(`${base}world.json.gz`, onProgress);
+    const terrain = await Terrain.load(`${base}terrain.bin.gz`, raw.terrain);
     return new World(raw, terrain, base);
   }
 
@@ -213,7 +214,7 @@ export class World {
   private fetchTile(k: string) {
     const p = (async () => {
       try {
-        const raw: RawTile = await fetchJson(`${this.base}tiles/${k.replace(',', '_')}.json`);
+        const raw: RawTile = await fetchJson(`${this.base}tiles/${k.replace(',', '_')}.json.gz`);
         if (this.tiles.has(k)) return;
         const t = this.decodeTile(k, raw);
         this.tiles.set(k, t);
@@ -285,24 +286,7 @@ export class World {
 }
 
 async function fetchJson<T>(url: string, onProgress?: (f: number) => void): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`No se pudo cargar ${url}: ${res.status}`);
-  const total = Number(res.headers.get('content-length')) || 0;
-  if (!res.body || !total || !onProgress) return res.json();
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    got += value.length;
-    onProgress(Math.min(1, got / total));
-  }
-  const buf = new Uint8Array(got);
-  let o = 0;
-  for (const c of chunks) { buf.set(c, o); o += c.length; }
-  return JSON.parse(new TextDecoder().decode(buf));
+  return JSON.parse(new TextDecoder().decode(await fetchBytes(url, onProgress)));
 }
 
 /** Hash entero → [0,1) estable. */

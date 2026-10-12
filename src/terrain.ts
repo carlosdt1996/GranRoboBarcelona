@@ -3,6 +3,8 @@
  * La interpolación es por triángulos, partiendo cada celda por la misma diagonal que usa la
  * malla del suelo (render/ground.ts), para que coches, árboles y edificios apoyen exactamente.
  */
+import { fetchBytes } from './net';
+
 export class Terrain {
   constructor(
     readonly nx: number,
@@ -14,9 +16,8 @@ export class Terrain {
   ) {}
 
   static async load(url: string, meta: { nx: number; ny: number; res: number; x0: number; y0: number }) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`No se pudo cargar ${url}: ${res.status}`);
-    const raw = new Int16Array(await res.arrayBuffer());
+    const bytes = await fetchBytes(url);
+    const raw = new Int16Array(bytes.slice().buffer, 0, bytes.length >> 1);
     const h = new Float32Array(raw.length);
     for (let i = 0; i < raw.length; i++) h[i] = raw[i] / 10;
     return new Terrain(meta.nx, meta.ny, meta.res, meta.x0, meta.y0, h);

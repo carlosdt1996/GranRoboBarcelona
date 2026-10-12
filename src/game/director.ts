@@ -31,6 +31,9 @@ export class Director {
     document.body.appendChild(this.box);
   }
 
+  /** Fracción libre de un rayo (paredes): los planos se acortan para no quedar detrás de un muro. */
+  ray?: (x0: number, y0: number, x1: number, y1: number) => number;
+
   start(cast: Record<string, Cast>) {
     this.cast = new Map(Object.entries(cast));
     this.active = true;
@@ -86,6 +89,16 @@ export class Director {
         v(a.x - ux * 2.6 + rx * 1.0, a.y - uy * 2.6 + ry * 1.0, a.z + 0.6, this.to);
         v(a.x, a.y, a.z + 1.7, this.look);
         break;
+    }
+    // si hay una pared entre la cámara y lo que mira, se acerca (en interiores pequeños, sobre todo)
+    for (const p of [this.from, this.to]) {
+      const lx = this.look.x, ly = -this.look.z, cx = p.x, cy = -p.z;
+      const f = this.ray?.(lx, ly, cx, cy) ?? 1;
+      if (f < 1) {
+        const k = Math.max(0.15, f * 0.85);
+        p.x = lx + (cx - lx) * k;
+        p.z = -(ly + (cy - ly) * k);
+      }
     }
   }
 
