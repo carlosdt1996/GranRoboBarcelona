@@ -14,10 +14,8 @@ from shapely.ops import transform
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 RAW = os.path.join(ROOT, "data", "raw")
-ZONES = {
-    # De Gran Via a Diagonal, de Tarragona/Sants a la Sagrada Família
-    "eixample": (2.1460, 41.3800, 2.1800, 41.4060),
-}
+sys.path.insert(0, os.path.dirname(__file__))
+from zones import ZONES  # noqa: E402
 zone = sys.argv[1] if len(sys.argv) > 1 else "eixample"
 MINLON, MINLAT, MAXLON, MAXLAT = ZONES[zone]
 LON0, LAT0 = (MINLON + MAXLON) / 2, (MINLAT + MAXLAT) / 2
