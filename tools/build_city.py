@@ -14,7 +14,7 @@ Uso: python3 tools/build_city.py            (Barcelona)
      REGION=valles python3 tools/build_city.py   (Barcelona + Vallès Occidental + Vallès Oriental)
 Requiere: pip install shapely numpy pillow (y haber ejecutado overture_fetch.py y terrain_fetch.py)
 """
-import json, math, os, sys, hashlib, shutil, warnings
+import glob, json, math, os, sys, hashlib, shutil, time, warnings
 from collections import defaultdict
 import numpy as np
 import shapely
@@ -323,8 +323,23 @@ for _, k, g in area_items:
 print(f"áreas: {n_areas} trozos · árboles: {n_trees}", file=sys.stderr)
 
 # ------------------------------------------------------------------ escritura
-if os.path.isdir(OUT): shutil.rmtree(OUT)
-os.makedirs(os.path.join(OUT, "tiles"))
+# no se borra la carpeta de golpe (en Windows, el servidor de desarrollo o el antivirus pueden tener
+# ficheros abiertos): se sobrescribe y al final se quitan las teselas sobrantes, con reintentos
+os.makedirs(os.path.join(OUT, "tiles"), exist_ok=True)
+old_tiles = set(glob.glob(os.path.join(OUT, "tiles", "*.json*")))
+
+
+def remove(path):
+    for _ in range(10):
+        try:
+            os.remove(path)
+            return True
+        except FileNotFoundError:
+            return True
+        except PermissionError:
+            time.sleep(0.5)
+    print(f"no se ha podido borrar {path}", file=sys.stderr)
+    return False
 (np.round(H * 10).astype("<i2")).tofile(os.path.join(OUT, "terrain.bin"))
 tile_list, total = [], 0
 for (tx, ty), d in sorted(tiles.items()):
@@ -375,6 +390,11 @@ for f in load("divisions.geojson"):
         continue
     c = inter.representative_point() if not inter.centroid.within(inter) else inter.centroid
     districts.append([p["name"], round(c.x), round(c.y)])
+
+# teselas que ya no existen en esta región
+new_tiles = {os.path.join(OUT, "tiles", f"{tx}_{ty}.json") for tx, ty in tile_list}
+for p_old in old_tiles:
+    if p_old.removesuffix(".gz") not in new_tiles: remove(p_old)
 
 ext = orient(city.simplify(4), 1.0)
 world = {

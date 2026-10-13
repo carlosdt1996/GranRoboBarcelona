@@ -54,8 +54,8 @@ if (mobile) document.body.classList.add('coarse');
 
 // Inicio de la demo de Barcelona: Passeig de Gràcia a la altura de la Casa Batlló
 const START = { lon: 2.16725, lat: 41.38975, street: 'Passeig de Gràcia' };
-// Piso franco de Pau Rovira: Rambleta del Pare Alegre, Terrassa
-const SAFEHOUSE = { lon: 2.0077, lat: 41.5553 };
+// Piso franco: el de la Tete en Sants, a cinco minutos de la estación (Pau llega de Terrassa en Rodalies)
+const SAFEHOUSE = { lon: 2.1335, lat: 41.3757 };
 const IDLE: Controls = { throttle: 0, brake: 0, steer: 0, handbrake: false };
 /** Jefes de la historia y su local. */
 const BOSSES: [string, Room['kind']][] = [['tete', 'piso'], ['remei', 'bar'], ['biel', 'nave'], ['enric', 'mansion'], ['mascarell', 'taller'], ['montse', 'bar']];
@@ -179,7 +179,7 @@ async function main() {
   scene.add(interiors.group);
   for (const [id, kind] of BOSSES) {
     const ch = CHARACTERS.find((c) => c.id === id)!;
-    interiors.add(`jefe:${id}`, kind, id === 'tete' ? 'PISO FRANCO · RAMBLETA DEL PARE ALEGRE' : ch.barrio.toUpperCase(), ch.lon, ch.lat);
+    interiors.add(`jefe:${id}`, kind, id === 'tete' ? 'PISO FRANCO · SANTS' : ch.barrio.toUpperCase(), ch.lon, ch.lat);
   }
   GUN_SHOPS.forEach(([n, lon, lat], i) => interiors.add(`armeria:${i}`, 'armeria', n, lon, lat));
   HOSPITALS.forEach(([n, lon, lat], i) => interiors.add(`hospital:${i}`, 'hospital', n, lon, lat));
@@ -193,12 +193,12 @@ async function main() {
     const [x, y] = map.toLocal(lon, lat), b = map.bounds;
     return x > b.minX && x < b.maxX && y > b.minY && y < b.maxY;
   };
-  const terrassa = inWorld(SAFEHOUSE.lon, SAFEHOUSE.lat);
-  // el coche de Pau: aparcado delante del piso franco (o, en la demo sin Terrassa, en Passeig de Gràcia)
+  const atHome = inWorld(SAFEHOUSE.lon, SAFEHOUSE.lat);
+  // el coche de Pau: aparcado delante del piso franco (o, si no está en el mapa, en Passeig de Gràcia)
   const own = new Vehicle('player', '#e01828');
   scene.add(own.mesh);
   let startX: number, startY: number;
-  if (terrassa) {
+  if (atHome) {
     [startX, startY] = [safehouse.door[0], safehouse.door[1]];
     const ne = graph.nearestEdge(startX, startY);
     if (ne) placeCar(own, ne.edge, ne.s);
@@ -1133,10 +1133,10 @@ async function main() {
   };
   requestAnimationFrame(frame);
 
-  // al empezar: dentro del piso franco de Terrassa (o, en la demo, al volante en Passeig de Gràcia)
-  if (terrassa) {
+  // al empezar: dentro del piso franco de Sants (o, si no está en el mapa, al volante en Passeig de Gràcia)
+  if (atHome) {
     enterRoom(safehouse);
-    setTimeout(() => hud.big('GRAN ROBO BARCELONA', economy.missions ? 'DE VUELTA EN EL PISO FRANCO' : 'DE TERRASSA A BARCELONA'), 900);
+    setTimeout(() => hud.big('GRAN ROBO BARCELONA', economy.missions ? 'DE VUELTA EN EL PISO FRANCO' : 'DE TERRASSA A SANTS'), 900);
   } else if (real) setTimeout(() => hud.say(real.label), 1200);
 
   (window as unknown as Record<string, unknown>).__game = {

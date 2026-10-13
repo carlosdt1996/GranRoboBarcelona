@@ -34,47 +34,48 @@ export interface Mission {
 }
 
 /**
- * La historia de Pau Rovira, «l'Egarenc»: un chaval de Terrassa que baja a Barcelona por una deuda
+ * La historia de Pau Rovira, «l'Egarenc»: un chaval de Terrassa que llega en Rodalies a Sants por una deuda
  * de su prima y acaba metido hasta el cuello en los negocios de media ciudad. Parodia exagerada con humor
  * negro, al estilo GTA: todo es ficción.
  */
 export const MISSIONS: Mission[] = [
-  // ======================================================================= ACTO I · TERRASSA
+  // ======================================================================= ACTO I · SANTS
   {
-    id: 'egara', act: 'ACTO I · TERRASSA', title: 'DE VUELTA A EGARA', giver: 'tete', room: 'piso',
+    id: 'egara', act: 'ACTO I · SANTS', title: 'DE TERRASSA A SANTS', giver: 'tete', room: 'piso',
     intro: [
-      ['tete', 'Pau. Cuánto tiempo. Siéntate. No, ahí no, que el sofá tiene una mancha de algo que no quiero explicar.'],
+      ['tete', 'Pau. Bienvenido a Barcelona. Siéntate. No, ahí no, que el sofá tiene una mancha de algo que no quiero explicar.'],
+      ['pau', 'Tres horas de Rodalies desde Terrassa para esto. ¿Qué pasa, Tete?'],
       ['pau', '¿Qué has hecho esta vez, Tete?'],
       ['tete', 'Invertí en criptomonedas. Luego en un bar. Luego en un bar de criptomonedas. Debo veinte mil euros a gente del Raval.'],
       ['pau', '¿Y por qué me lo cuentas a mí?'],
       ['tete', 'Porque les di tu nombre como aval. Y tu DNI. Y la dirección de la iaia, que en paz descanse.'],
-      ['karim', 'Pau, primo. Tranquilo: en Terrassa nadie muere por deudas. Se muere por la C-16.'],
-      ['tete', 'El Nando tiene un coche para ti en el desguace de Can Parellada. Empezamos hoy.'],
+      ['karim', 'Pau, primo. Tranquilo: en Barcelona nadie muere por deudas. Se muere por el alquiler.'],
+      ['tete', 'El Nando tiene un coche para ti en su desguace de la Zona Franca. Empezamos hoy.'],
     ],
     steps: [
-      { t: 'goto', at: [1.9915, 41.5590], text: 'Ve al desguace del Nando en Can Parellada.' },
+      { t: 'goto', at: [2.1380, 41.3555], text: 'Ve al desguace del Nando, en la Zona Franca.' },
       { t: 'talk', lines: [['nando', 'Ese Seat lleva tres matrículas y dos dueños muertos. El tercero, si quieres, eres tú.'], ['pau', 'Me quedo la matrícula que no tenga multas.'], ['nando', 'Entonces ninguna. Y no abras el maletero, que el último dueño sigue dentro.']] },
-      { t: 'steal', at: [1.9925, 41.5585], kind: 'sedan', color: '#f2f2f2', text: 'Sube al coche blanco del desguace.' },
-      { t: 'deliver', at: [2.0077, 41.5553], text: 'Vuelve a la Rambleta del Pare Alegre.' },
+      { t: 'steal', at: [2.1385, 41.3550], kind: 'sedan', color: '#f2f2f2', text: 'Sube al coche blanco del desguace.' },
+      { t: 'deliver', at: [2.1335, 41.3757], text: 'Vuelve al piso de la Tete, en Sants.' },
     ],
-    outro: [['tete', 'Perfecto. Ya tienes coche. Mañana bajas a Barcelona. Si no vuelves, ¿me dejas el piso?']],
+    outro: [['tete', 'Perfecto. Ya tienes coche. Mañana empiezas a pagar. Si no vuelves, ¿me dejas el sofá?']],
     reward: 500,
   },
   {
-    id: 'c16', act: 'ACTO I · TERRASSA', title: 'LA C-16', giver: 'tete', room: 'piso',
+    id: 'c16', act: 'ACTO I · SANTS', title: 'EL SOBRE', giver: 'tete', room: 'piso',
     intro: [
       ['tete', 'La Reina del Raval quiere conocerte. Llévale este sobre. Y no lo abras.'],
       ['pau', '¿Y si lo abro?'],
       ['tete', 'Entonces dentro encontrarás una foto tuya con una cruz encima. Es un sistema muy antiguo, pero funciona.'],
     ],
     steps: [
-      { t: 'pickup', at: [2.0098, 41.5640], text: 'Recoge el sobre del Avi Quim en la Plaça Vella.' },
-      { t: 'talk', lines: [['avi-quim', 'Nen, en mi época estas cosas se hacían en mano y con un apretón. Del cuello.'], ['pau', 'Ahora se hace igual, avi. Pero con Bizum.'], ['avi-quim', 'Y si te para la Guardia Civil en la C-16, tú di que vas a Montserrat a rezar. Siempre cuela.']] },
-      { t: 'goto', at: [2.1688, 41.3790], text: 'Baja a Barcelona: el Bar La Sirena, en el Raval.', car: true },
+      { t: 'pickup', at: [2.1355, 41.3757], text: 'Recoge el sobre del Avi Quim en la Plaça de Sants.' },
+      { t: 'talk', lines: [['avi-quim', 'Nen, en mi época, en Terrassa, estas cosas se hacían en mano y con un apretón. Del cuello.'], ['pau', 'Ahora se hace igual, avi. Pero con Bizum.'], ['avi-quim', 'Y si te paran los Mossos en la Gran Via, tú di que vas a la Sagrada Família a rezar. Siempre cuela.']] },
+      { t: 'goto', at: [2.1688, 41.3790], text: 'Lleva el sobre al Bar La Sirena, en el Raval. En coche: a pie no llegas.', car: true },
     ],
     outro: [['pakito', 'Así que tú eres el de Terrassa. Bienvenido a Barcelona: aquí el alquiler te mata antes que las balas.']],
     reward: 800,
-    time: 900,
+    time: 600,
   },
   // ======================================================================= ACTO II · EL RAVAL
   {
@@ -277,18 +278,18 @@ export const MISSIONS: Mission[] = [
       ['remei', 'Pau, la deuda está pagada. Pero tengo un último encargo. Uno grande.'],
       ['pau', 'En las películas, el último encargo siempre acaba mal.'],
       ['remei', 'Esto no es una película, cariño: es Barcelona. Aquí todo acaba mal, pero con vistas al mar.'],
-      ['remei', 'Un maletín con el dinero de todos: el Marqués, el Capità y el hipster. En el Moll d\'Espanya. Es tuyo si lo sacas de Barcelona.'],
+      ['remei', 'Un maletín con el dinero de todos: el Marqués, el Capità y el hipster. En el Moll d\'Espanya. Es tuyo si llegas con él a Sants.'],
       ['nadia', 'Como abogada te aconsejo que no lo hagas. Como amiga, que lo hagas rápido.'],
     ],
     steps: [
       { t: 'pickup', at: [2.1835, 41.3755], text: 'Recoge el maletín en el Moll d\'Espanya.', stars: 3 },
       { t: 'escape', stars: 3, text: 'Despista a la policía.' },
-      { t: 'goto', at: [2.0077, 41.5553], text: 'Vuelve a casa: Rambleta del Pare Alegre, Terrassa.' },
+      { t: 'goto', at: [2.1335, 41.3757], text: 'Vuelve a casa: el piso de la Tete, en Sants.' },
     ],
     outro: [
       ['tete', '¿Esto es... todo para nosotros?'],
       ['pau', 'Para nosotros, para el avi y para pagarle al Nando el coche. Y el del maletero.'],
-      ['karim', 'Con esto en Barcelona te da para la fianza de un estudio de treinta metros. Mejor quedaos en Terrassa.'],
+      ['karim', 'Con esto en Barcelona te da para la fianza de un estudio de treinta metros. Mejor volved a Terrassa.'],
       ['tete', 'Pau... ¿te puedo pedir un préstamo?'],
     ],
     reward: 50000,

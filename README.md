@@ -1,16 +1,16 @@
 # Gran Robo Barcelona
 
-Parodia de GTA en pixel art con estética **OutRun** sobre una Barcelona (y el Vallès) reconstruida a partir de
+Parodia de GTA en pixel art con estética **OutRun** sobre una Barcelona reconstruida a partir de
 **OpenStreetMap**: edificios reales, relieve real, hora real de Barcelona y tráfico real del Ayuntamiento.
 
-Eres **Pau Rovira, «l'Egarenc»**, un chaval de Terrassa que baja a Barcelona a pagar una deuda de su prima y
-acaba metido en los negocios de media ciudad. Humor negro y caricatura: todo es ficción.
+Eres **Pau Rovira, «l'Egarenc»**, un chaval de Terrassa que llega en Rodalies a Sants para pagar una deuda de su
+prima y acaba metido en los negocios de media ciudad. Humor negro y caricatura: todo es ficción.
 
 ## El mundo
 
-- **Barcelona entera + Vallès Occidental + Vallès Oriental** (Terrassa, Sabadell, Sant Cugat, Granollers, Mollet,
-  el Montseny...): cientos de miles de edificios reales con sus alturas (Catastro vía OSM), relieve, mar, parques y
-  bosques. Se carga por teselas alrededor del jugador.
+- **Barcelona entera**: los 10 distritos, de Collserola al mar, con unos 160.000 volúmenes de edificios reales con
+  sus alturas (Catastro vía OSM), relieve (Montjuïc, el Tibidabo), mar, parques y bosques. Se carga por teselas
+  alrededor del jugador.
 - **Hora real** de Barcelona: el sol está donde está ahora mismo; de noche, estrellas, farolas y ventanas encendidas.
 - **Tráfico real**: estado de los tramos del Ayuntamiento (en directo con `npm run dev`; si no, el habitual a esa
   hora y ese día) → más coches y más lentos donde hay atasco.
@@ -26,10 +26,10 @@ acaba metido en los negocios de media ciudad. Humor negro y caricatura: todo es 
   Te pueden detener. Los talleres **Pinta y Listo** te quitan las estrellas.
 - **Muerte**: reapareces en la puerta del hospital más cercano (cinemática y factura); si te detienen, en la comisaría.
 - **Economía**: dinero, armerías, chalecos, vida, dinero que sueltan los caídos y **20 paquetes ocultos**.
-- **Interiores**: piso franco (Rambleta del Pare Alegre, Terrassa: guarda la partida), locales de los jefes, armerías,
+- **Interiores**: piso franco (el de la Tete en Sants: guarda la partida), locales de los jefes, armerías,
   hospitales y comisarías.
 - **Historia**: 16 misiones cinemáticas (diálogos con tiros de cámara, presentación de objetivos) y más de cien
-  personajes de toda Barcelona y el Vallès que te encuentras por la calle.
+  personajes de toda Barcelona que te encuentras por la calle.
 - **Radio** en los vehículos (V): Flash BCN (synthwave), Ràdio Rumba y Wave 93.
 - **Trucos** de Vice City: THUGSTOOLS, ASPIRINE, PRECIOUSPROTECTION, LEAVEMEALONE, BIGBANG, PANZER...
 - **Pausa** (Esc o ⚙): opciones, guardar y estadísticas.
@@ -90,15 +90,6 @@ fotos de invierno, con los plátanos sin hojas) y la convierte en pixel art en u
 3. `python3 tools/build_facades.py piloto` (zonas: `piloto`, `eixample`, `ciutat-vella`, `ciutat` o un bbox).
 
 Hay que repetirlo después de cada `build_city.py`, que regenera las teselas.
-
-Con los dos Vallès (lo que viene generado):
-
-```bash
-python3 tools/overture_fetch.py 1.88 41.30 2.60 41.84
-TERRAIN_Z=13 python3 tools/terrain_fetch.py 1.88 41.30 2.60 41.84
-REGION=valles python3 tools/build_city.py
-python3 tools/traffic_profile.py
-```
 
 ## Estructura
 

@@ -6,7 +6,7 @@ tanto en la descarga como en el repositorio. build_city.py ya lo llama al termin
 
 Uso: python3 tools/gzip_data.py
 """
-import glob, gzip, os
+import glob, gzip, os, time
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "public", "data", "bcn")
 before = after = 0
@@ -14,8 +14,14 @@ files = [os.path.join(OUT, "world.json"), os.path.join(OUT, "terrain.bin")] + gl
 for p in files:
     if not os.path.exists(p): continue
     raw = open(p, "rb").read()
-    with open(p + ".gz", "wb") as f:
-        f.write(gzip.compress(raw, 9, mtime=0))
+    data = gzip.compress(raw, 9, mtime=0)
+    for intento in range(10):  # en Windows el servidor o el antivirus pueden tenerlo abierto un momento
+        try:
+            with open(p + ".gz", "wb") as f:
+                f.write(data)
+            break
+        except PermissionError:
+            time.sleep(0.5)
     before += len(raw)
     after += os.path.getsize(p + ".gz")
     os.remove(p)
