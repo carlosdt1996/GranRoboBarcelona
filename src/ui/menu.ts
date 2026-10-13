@@ -33,6 +33,8 @@ export class PauseMenu {
   open = false;
   onChange?: (o: Options) => void;
   onSave?: () => void;
+  /** Acciones que en el teclado tienen tecla propia: 'heli' (H), 'radio' (V), 'music' (N). */
+  onAction?: (a: 'heli' | 'radio') => void;
   private root: HTMLDivElement;
   private optsEl: HTMLDivElement;
   private statsEl: HTMLDivElement;
@@ -46,6 +48,8 @@ export class PauseMenu {
         <div class="pm-title">PAUSA</div>
         <button data-act="resume">CONTINUAR</button>
         <button data-act="save">GUARDAR PARTIDA</button>
+        <button data-act="heli">PEDIR HELICÓPTERO (H)</button>
+        <button data-act="radio">CAMBIAR DE EMISORA (V)</button>
         <div class="pm-sub">OPCIONES</div>
         <div class="pm-opts"></div>
         <div class="pm-sub">ESTADÍSTICAS</div>
@@ -57,6 +61,8 @@ export class PauseMenu {
     this.statsEl = this.root.querySelector('.pm-stats')!;
     this.root.querySelector('[data-act="resume"]')!.addEventListener('click', () => this.toggle());
     this.root.querySelector('[data-act="save"]')!.addEventListener('click', () => this.onSave?.());
+    this.root.querySelector('[data-act="heli"]')!.addEventListener('click', () => { this.toggle(); this.onAction?.('heli'); });
+    this.root.querySelector('[data-act="radio"]')!.addEventListener('click', () => { this.toggle(); this.onAction?.('radio'); });
     this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.renderOptions();
   }

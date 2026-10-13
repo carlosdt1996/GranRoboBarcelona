@@ -3,7 +3,11 @@ import { createCarMesh, DIMENSIONS, wreckMesh, type ModelKind } from '../render/
 import type { WallGrid } from '../collision';
 import { clamp } from '../geom';
 
-export interface Controls { throttle: number; brake: number; steer: number; handbrake: boolean }
+export interface Controls {
+  throttle: number; brake: number; steer: number; handbrake: boolean;
+  /** A pie con joystick: rumbo al que andar (mundo) y cuánto (0..1; casi a fondo = correr). */
+  dir?: number; mag?: number;
+}
 
 export interface Spec { maxSpeed: number; accel: number; brake: number; grip: number; steerLow: number; steerHigh: number; wheelBase: number }
 

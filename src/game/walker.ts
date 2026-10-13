@@ -39,15 +39,25 @@ export class Walker {
       this.vx *= Math.exp(-4 * dt);
       this.vy *= Math.exp(-4 * dt);
     } else {
-      let side = 0;
-      if (aimA !== null) { this.face(aimA, dt); side = c.steer * WALK; }
-      else this.a += c.steer * TURN * dt * (c.handbrake ? 0.8 : 1);
-      const run = c.handbrake && aimA === null;
-      const want = c.throttle > 0 ? (run ? RUN : WALK) : c.brake > 0 ? -BACK : 0;
-      const fx = Math.sin(this.a), fy = Math.cos(this.a);
       const k = Math.min(1, dt * 12);
-      this.vx += (fx * want + fy * side - this.vx) * k;
-      this.vy += (fy * want - fx * side - this.vy) * k;
+      if (c.dir !== undefined && c.mag) {
+        // joystick analógico (como en GTA): anda hacia donde apunta el stick; apuntando, se desplaza sin girarse
+        const run = (c.mag > 0.9 || c.handbrake) && aimA === null;
+        const sp = run ? RUN : WALK * Math.max(0.4, c.mag / 0.9);
+        if (aimA !== null) this.face(aimA, dt);
+        else this.a += angDiff(this.a, c.dir) * Math.min(1, dt * 10);
+        this.vx += (Math.sin(c.dir) * sp - this.vx) * k;
+        this.vy += (Math.cos(c.dir) * sp - this.vy) * k;
+      } else {
+        let side = 0;
+        if (aimA !== null) { this.face(aimA, dt); side = c.steer * WALK; }
+        else this.a += c.steer * TURN * dt * (c.handbrake ? 0.8 : 1);
+        const run = c.handbrake && aimA === null;
+        const want = c.throttle > 0 ? (run ? RUN : WALK) : c.brake > 0 ? -BACK : 0;
+        const fx = Math.sin(this.a), fy = Math.cos(this.a);
+        this.vx += (fx * want + fy * side - this.vx) * k;
+        this.vy += (fy * want - fx * side - this.vy) * k;
+      }
     }
     this.x += this.vx * dt;
     this.y += this.vy * dt;

@@ -213,7 +213,6 @@ async function main() {
   }
   combat.playerCar = car;
   combat.walker = car ? null : walker;
-  $('enterbtn').textContent = car ? 'BAJAR' : 'SUBIR';
   cam.snap(focus());
 
   // precarga alrededor del punto de salida: teselas, edificios y suelo
@@ -235,6 +234,10 @@ async function main() {
   const pixel = new Pixelator(320, 240);
   const resize = () => {
     const w = innerWidth, h = innerHeight;
+    // HUD adaptable: esquinas según el tamaño de la pantalla; controles táctiles, con un mínimo cómodo
+    const root = document.documentElement.style;
+    root.setProperty('--s', String(Math.max(mobile ? 0.72 : 0.55, Math.min(1.15, h / 640, w / 1100))));
+    root.setProperty('--t', String(Math.max(0.78, Math.min(1.15, h / 430))));
     const ih = Math.round(Math.min(270, Math.max(200, h / 3)));
     const iw = Math.round((ih * w) / h);
     renderer.setSize(iw, ih, false);
@@ -273,7 +276,7 @@ async function main() {
   // pantalla de título
   $('loadbar').hidden = true;
   $('start').hidden = false;
-  if (mobile) $('help').innerHTML = 'VOLANTE A LA IZQUIERDA · GAS, FRENO Y DRIFT A LA DERECHA · BAJAR Y FUEGO';
+  if (mobile) $('help').innerHTML = 'TOCA PARA EMPEZAR · VOLANTE A LA IZQUIERDA · BOTONES A LA DERECHA<br />BOTÓN AMARILLO: SUBIR, BAJAR, ENTRAR, GUARDAR... · ⚙: PAUSA, HELICÓPTERO Y RADIO';
   await new Promise<void>((res) => {
     const go = () => { removeEventListener('pointerdown', go); removeEventListener('keydown', go); res(); };
     addEventListener('pointerdown', go);
@@ -311,7 +314,6 @@ async function main() {
     car = v;
     combat.playerCar = v;
     combat.walker = v ? null : walker;
-    enterBtn.textContent = v ? 'BAJAR' : 'SUBIR';
   };
   const getOut = () => {
     const v = car!;
@@ -336,8 +338,7 @@ async function main() {
       heli = h;
       setCar(null);
       combat.walker = null;
-      enterBtn.textContent = 'BAJAR';
-      hud.say('ESPACIO SUBIR · SHIFT BAJAR');
+      hud.say(mobile ? 'MORADO SUBE · NARANJA BAJA' : 'ESPACIO SUBIR · SHIFT BAJAR');
       sound.door();
       return;
     }
@@ -451,6 +452,10 @@ async function main() {
     hud.big(ok ? 'PARTIDA GUARDADA' : 'NO SE HA PODIDO GUARDAR', ok ? `${economy.missions} MISIONES · $${economy.money}` : '');
   };
   pause.onSave = () => { pause.toggle(); saveGame(); };
+  pause.onAction = (a) => {
+    if (a === 'radio') hud.say(car || heli ? sound.nextStation() : 'LA RADIO SUENA EN LOS VEHÍCULOS');
+    else summonHeli();
+  };
   $('pausebtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); pause.toggle(); });
   if (!options.music && sound.musicOn) { sound.toggleMusic(); musicBtn.textContent = '♪ OFF'; }
   if (saved) {
@@ -720,6 +725,44 @@ async function main() {
     hud.big('TRUCO ACTIVADO', code);
   };
 
+  function summonHeli() {
+    if (dead || heli || inside) return;
+    const f = focus();
+    hud.say(helis.summon(f.x, f.y, f.a) ? 'HELICÓPTERO AL LADO' : 'NO HAY SITIO PARA ATERRIZAR');
+  }
+
+  // ------------------------------------------------------- controles táctiles según lo que haces
+  const tb = (sel: string) => document.querySelector<HTMLElement>(`#touch ${sel}`)!;
+  const touch = { gas: tb('.gas'), brake: tb('.brake'), drift: tb('.drift'), fire: tb('.fire'), aim: tb('.aim'), act: tb('.act') };
+  let touchKey = '', touchT = 0;
+  const updateTouch = (dt: number) => {
+    if (!mobile) return;
+    touchT -= dt;
+    if (touchT > 0) return;
+    touchT = 0.2;
+    let act = '';
+    if (heli || car) act = 'BAJAR';
+    else if (interiors.nearDoor(walker.x, walker.y)) act = inside ? 'SALIR' : 'ENTRAR';
+    else if (inside && Math.hypot(walker.x - inside.action[0], walker.y - inside.action[1]) < 2) act = inside === safehouse ? 'GUARDAR' : inside.kind === 'armeria' ? 'COMPRAR' : '';
+    else if (helis.nearest(walker.x, walker.y, 5.5)) act = 'SUBIR';
+    else for (const v of traffic.vehicles()) if (!v.wrecked && Math.hypot(v.x - walker.x, v.y - walker.y) - v.length / 2 < 1.6) { act = v.speed > 1 ? 'ROBAR' : 'SUBIR'; break; }
+    const mode = heli ? 'heli' : car ? 'car' : 'foot';
+    const key = mode + act;
+    if (key === touchKey) return;
+    touchKey = key;
+    const L = {
+      car: ['GAS', 'FRENO', 'DRIFT', '', ''],
+      foot: ['ANDAR', 'ATRÁS', 'CORRER', 'FUEGO', 'APUNTAR'],
+      heli: ['AVANZAR', 'ATRÁS', 'SUBIR', 'BAJAR', ''],
+    }[mode];
+    [touch.gas, touch.brake, touch.drift, touch.fire, touch.aim].forEach((el, i) => {
+      el.textContent = L[i];
+      el.classList.toggle('hide', !L[i]);
+    });
+    touch.act.textContent = act || '·';
+    touch.act.classList.toggle('off', !act);
+  };
+
   // ------------------------------------------------------- mapa de la ciudad (M)
   const cityMap = new CityMap(map, base);
   const toggleMap = () => {
@@ -770,6 +813,7 @@ async function main() {
   const healthBar = $('health').querySelector('u') as HTMLElement;
   const armorBar = $('health').querySelector('.arm u') as HTMLElement;
   const moneyEl = $('money');
+  const speedoEl = $('speedo');
   const starsEl = $('stars'), starEls = [...starsEl.children] as HTMLElement[];
   let lastX = startX, lastY = startY, hintT = 0;
 
@@ -893,6 +937,8 @@ async function main() {
     if (input.pressed('KeyN')) toggleMusic();
     if (input.pressed('KeyV') && (car || heli)) hud.say(sound.nextStation());
 
+    const tap = input.tapped();
+    updateTouch(realDt);
     // diálogos y cinemáticas: la acción se para y el HUD se esconde
     $('hud').classList.toggle('cine', hud.talking || cutscene.active);
     if (hud.talking) {
@@ -912,7 +958,7 @@ async function main() {
       return;
     }
     if (cutscene.active) {
-      const skip = input.enterPressed() || input.pressed('Space');
+      const skip = input.enterPressed() || input.pressed('Space') || tap;
       cutscene.update(dt, cam.camera, skip);
       const [cx, cy] = cutscene.focus;
       map.update(cx, cy);
@@ -948,10 +994,7 @@ async function main() {
       else if (car) getOut();
       else if (walker.down <= 0) getIn();
     }
-    if (input.pressed('KeyH') && !dead && !heli && !inside) {
-      const f = focus();
-      hud.say(helis.summon(f.x, f.y, f.a) ? 'HELICÓPTERO AL LADO' : 'NO HAY SITIO PARA ATERRIZAR');
-    }
+    if (input.pressed('KeyH')) summonHeli();
     if (input.pressed('KeyR') && car && !dead) {
       const ne = graph.nearestEdge(car.x, car.y);
       if (ne) placeCar(car, ne.edge, ne.s);
@@ -963,7 +1006,12 @@ async function main() {
       ? aim.update(input.aimHeld(), input.mouseDx(), walker.x, walker.y, walker.z, walker.a, input.aimHeld() ? aimTargets() : [], walls)
       : aim.update(false, 0, 0, 0, 0, 0, [], walls);
 
-    const ctl = dead || car?.wrecked ? IDLE : input.controls();
+    let ctl = dead || car?.wrecked ? IDLE : input.controls();
+    if (onFoot && !dead) {
+      // a pie, el joystick manda en la dirección de la pantalla (relativa a la cámara)
+      const st = input.stickPolar();
+      if (st.mag) ctl = { ...ctl, dir: cam.heading + st.ang, mag: st.mag };
+    }
     const hctl = heli && !dead ? input.heli() : null;
     acc += dt;
     while (acc >= DT) {
@@ -1072,6 +1120,7 @@ async function main() {
     const rpm = car ? 0.2 + 0.8 * Math.min(1, (sp - gears[g - 1]) / (gears[g] - gears[g - 1])) : 0;
     hud.update(dt, sp * 3.6, rpm, inside ? inside.door[0] : f.x, inside ? inside.door[1] : f.y, f.a, inside ? -1 : streets.nearest(f.x, f.y, f.a), traffic.cars.map((c) => c.v));
     healthBar.style.width = `${walker.health}%`;
+    speedoEl.hidden = !car && !heli; // a pie no hay velocímetro, como en GTA
     armorBar.style.width = `${walker.armor}%`;
     moneyEl.textContent = economy.tick(dt);
 
@@ -1093,7 +1142,7 @@ async function main() {
   (window as unknown as Record<string, unknown>).__game = {
     get car() { return car; }, get heli() { return heli; }, get inside() { return inside; },
     helis, roofs, gps, police, walker, traffic, peds, combat, map, cam, scene, renderer, stats, graph, buildings, ground,
-    economy, story, actors, interiors, pickups,
+    economy, story, actors, interiors, pickups, input,
     /** Depuración: colocar al jugador en una calle cercana a lon/lat con un rumbo dado. */
     teleport(lon: number, lat: number, deg: number) {
       const [x, y] = map.toLocal(lon, lat);

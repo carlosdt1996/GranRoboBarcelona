@@ -19,6 +19,11 @@ export class ShopMenu {
     this.title = this.root.querySelector('.pm-title')!;
     this.list = this.root.querySelector('.sh-list')!;
     this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
+    const close = document.createElement('button');
+    close.className = 'sh-close';
+    close.textContent = '✕ SALIR';
+    close.addEventListener('click', () => this.hide());
+    this.root.querySelector('.pm')!.appendChild(close);
   }
 
   show(name: string) {

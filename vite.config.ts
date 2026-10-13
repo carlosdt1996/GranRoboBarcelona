@@ -11,4 +11,12 @@ const proxy = {
 };
 
 // base relativa para poder publicar en GitHub Pages o cualquier subcarpeta
-export default defineConfig({ base: './', build: { chunkSizeWarningLimit: 1000 }, server: { proxy }, preview: { proxy } });
+// accesible desde otros dispositivos de la red (p. ej. el móvil por Tailscale: IP 100.x o nombre MagicDNS)
+const allowedHosts = ['.ts.net', 'carlos', 'localhost'];
+
+export default defineConfig({
+  base: './',
+  build: { chunkSizeWarningLimit: 1000 },
+  server: { proxy, allowedHosts },
+  preview: { proxy, allowedHosts },
+});

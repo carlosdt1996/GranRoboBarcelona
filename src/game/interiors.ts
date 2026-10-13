@@ -231,7 +231,7 @@ export class Interiors {
   enter(r: Room): [number, number, number] {
     this.current = r;
     for (const o of this.rooms) o.group.visible = o === r;
-    return [r.exit[0], r.exit[1] + Math.min(2.6, r.d / 3), 0];
+    return [r.exit[0], r.exit[1] + 1.2, 0];
   }
 
   /** Salir: devuelve dónde aparece en la calle (x, y, rumbo). */

@@ -94,7 +94,7 @@ export class Story {
       const [gx, gy] = room!.giver;
       this.giverActor = this.c.actors.spawn(this.next!.giver, gx, gy, 'idle');
       this.giverActor.a = Math.PI;
-      this.giverMarker = this.c.markers.add(gx, gy - 1.6, 0, 'mission', this.next!.title, 0, '#ffd020');
+      this.giverMarker = this.c.markers.add(gx, gy - 1.3, 0, 'mission', this.next!.title, 0, '#ffd020');
       this.giverMarker.mesh.position.y = 1000;
       this.giverMarker.mesh.scale.set(0.5, 0.55, 0.5);
     }
@@ -104,7 +104,7 @@ export class Story {
       if (this.giverActor && !this.run) { this.giverActor.mission = false; this.giverActor.x = 1e9; }
       this.giverActor = null;
     }
-    if (inRoom && this.giverMarker && Math.hypot(p.x - this.giverMarker.x, p.y - this.giverMarker.y) < 1.4) this.start(this.next!);
+    if (inRoom && this.giverMarker && Math.hypot(p.x - this.giverMarker.x, p.y - this.giverMarker.y) < 0.9) this.start(this.next!);
   }
 
   start(m: Mission) {
